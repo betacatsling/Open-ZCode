@@ -173,14 +173,10 @@ async function answerControlRequest(
     // 部分版本在 assistant 消息落地前就请求审批：先补发工具卡片，审批卡片才有归属。
     for (const event of state.registerToolCall(callId, toolName, input)) channel.push(event);
   }
-  const description = readString(body, "description") ?? readString(body, "decision_reason");
+  // Claude 的 description / decision_reason 是英文的内部说明（常常只是文件名），不作为审批标题；
+  // ZCode 用统一的、按界面语言渲染的 harness 审批标题，工具详情由审批卡片自己展示。
   const decision = await raceAbort(
-    request.requestApproval({
-      callId,
-      toolName,
-      input,
-      ...(description ? { reason: description } : {}),
-    }),
+    request.requestApproval({ callId, toolName, input }),
     request.abortSignal,
   );
   const suggestions = body?.permission_suggestions;

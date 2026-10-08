@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import type { MessageWithParts } from "@zcode/contracts";
+import {
+  formatAgentHarnessApprovalReason,
+  parseAgentHarnessApprovalReason,
+} from "@zcode/shared/agent-harness";
 import { buildHarnessHandoffPrompt } from "../../src/runtime/harness/handoff.js";
 import { reverseApplyHunks, toDiffHunks } from "../../src/runtime/harness/external-turn.js";
 import {
@@ -126,4 +130,23 @@ test("reverseApplyHunks restores the pre-change file for checkpoints", () => {
   assert.equal(reverseApplyHunks("/a", "goodbye\nkeep\n", hunks), "hello\nkeep\n");
   assert.equal(reverseApplyHunks("/a", "unrelated\n", hunks), undefined);
   assert.equal(reverseApplyHunks("/a", undefined, hunks), undefined);
+});
+
+test("harness approval titles are parseable so the UI can localize them", () => {
+  const cases = [
+    ["codex", "Edit", "Codex wants to edit a file", "edit"],
+    ["claude-code", "Write", "Claude Code wants to write a file", "write"],
+    ["pi", "bash", "pi wants to run a command", "command"],
+    ["codex", "mcp__docs__search", "Codex wants to use mcp__docs__search", "tool"],
+  ] as const;
+  for (const [harness, tool, text, action] of cases) {
+    const reason = formatAgentHarnessApprovalReason(harness, tool);
+    assert.equal(reason, text);
+    const parsed = parseAgentHarnessApprovalReason(reason);
+    assert.equal(parsed?.harness, harness);
+    assert.equal(parsed?.action, action);
+    if (action === "tool") assert.equal(parsed?.toolName, tool);
+  }
+  assert.equal(parseAgentHarnessApprovalReason("Path is outside the workspace"), null);
+  assert.equal(parseAgentHarnessApprovalReason(undefined), null);
 });

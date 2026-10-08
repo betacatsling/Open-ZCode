@@ -13,6 +13,11 @@ export const AGENT_HARNESS_IDS = ["zcode", "claude-code", "codex", "pi"] as cons
 export const agentHarnessIdSchema = z.enum(AGENT_HARNESS_IDS);
 export type AgentHarnessId = z.infer<typeof agentHarnessIdSchema>;
 export type ExternalAgentHarnessId = Exclude<AgentHarnessId, "zcode">;
+export const EXTERNAL_AGENT_HARNESS_IDS = [
+  "claude-code",
+  "codex",
+  "pi",
+] as const satisfies readonly ExternalAgentHarnessId[];
 
 export const ZCODE_NATIVE_HARNESS_ID = "zcode" satisfies AgentHarnessId;
 /** harness 自己决定模型 / 思考深度时使用的占位值（不向 CLI 传 --model / --effort）。 */
@@ -158,3 +163,68 @@ export type AgentHarnessAvailabilityInfo = z.infer<typeof agentHarnessAvailabili
 
 /** workspace-config 中 harness 选项的 id（select 值即 AgentHarnessId）。 */
 export const AGENT_HARNESS_CONFIG_OPTION_ID = "harness";
+
+/** 外部 harness 审批请求的动作类别（决定审批卡片标题的措辞）。 */
+export type AgentHarnessApprovalAction = "edit" | "write" | "command" | "tool";
+
+const APPROVAL_ACTION_BY_TOOL: Record<string, AgentHarnessApprovalAction> = {
+  edit: "edit",
+  multiedit: "edit",
+  notebookedit: "edit",
+  apply_patch: "edit",
+  write: "write",
+  bash: "command",
+  shell: "command",
+  exec_command: "command",
+};
+
+export function classifyAgentHarnessApprovalTool(toolName: string): AgentHarnessApprovalAction {
+  return APPROVAL_ACTION_BY_TOOL[toolName.toLowerCase()] ?? "tool";
+}
+
+const APPROVAL_ACTION_TEXT: Record<Exclude<AgentHarnessApprovalAction, "tool">, string> = {
+  edit: "edit a file",
+  write: "write a file",
+  command: "run a command",
+};
+
+/**
+ * harness 没有给出说明时，ZCode 审批卡片的默认标题（英文、可解析）。
+ * agent 进程不知道界面语言，UI 用 {@link parseAgentHarnessApprovalReason} 识别后按界面语言重新渲染。
+ */
+export function formatAgentHarnessApprovalReason(
+  harness: ExternalAgentHarnessId,
+  toolName: string,
+): string {
+  const label = AGENT_HARNESS_CATALOG[harness].label;
+  const action = classifyAgentHarnessApprovalTool(toolName);
+  return action === "tool"
+    ? `${label} wants to use ${toolName}`
+    : `${label} wants to ${APPROVAL_ACTION_TEXT[action]}`;
+}
+
+export interface ParsedAgentHarnessApprovalReason {
+  harness: ExternalAgentHarnessId;
+  label: string;
+  action: AgentHarnessApprovalAction;
+  toolName?: string;
+}
+
+export function parseAgentHarnessApprovalReason(
+  reason: string | null | undefined,
+): ParsedAgentHarnessApprovalReason | null {
+  if (!reason) return null;
+  for (const harness of EXTERNAL_AGENT_HARNESS_IDS) {
+    const label = AGENT_HARNESS_CATALOG[harness].label;
+    const prefix = `${label} wants to `;
+    if (!reason.startsWith(prefix)) continue;
+    const rest = reason.slice(prefix.length);
+    for (const [action, text] of Object.entries(APPROVAL_ACTION_TEXT)) {
+      if (rest === text) return { harness, label, action: action as AgentHarnessApprovalAction };
+    }
+    if (rest.startsWith("use ") && rest.length > 4) {
+      return { harness, label, action: "tool", toolName: rest.slice(4) };
+    }
+  }
+  return null;
+}

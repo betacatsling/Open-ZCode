@@ -15,6 +15,7 @@ import {
   type ZCodePermissionRequest,
   type ZCodeProvider,
 } from "@zcode/shared";
+import { parseAgentHarnessApprovalReason } from "@zcode/shared/agent-harness";
 import { MAX_PERMISSION_FEEDBACK_CHARS } from "@zcode/shared/zcode-protocol-v4";
 import { Button } from "@/components/ui/button.js";
 import { cn } from "@/components/lib/utils.js";
@@ -243,6 +244,22 @@ function getPermissionDisplayReason(request: ZCodePermissionRequest): string | n
     : null;
 
   return inputReason ?? readUserFacingPermissionReason(request.description) ?? rawReason;
+}
+
+/**
+ * 外部 harness（Claude Code / Codex / pi）的审批没有自带说明时，agent 给出固定格式的英文标题；
+ * agent 进程不知道界面语言，这里识别后按当前界面语言渲染。
+ */
+function localizeAgentHarnessPermissionReason(
+  reason: string | null,
+  intl: ReturnType<typeof useZCodeIntl>["intl"],
+): string | null {
+  const parsed = parseAgentHarnessApprovalReason(reason);
+  if (!parsed) return reason;
+  return intl.formatMessage(
+    { id: `chat.permission.agentHarness.${parsed.action}` },
+    { harness: parsed.label, tool: parsed.toolName ?? "" },
+  );
 }
 
 function getMcpPermissionToolName(toolCall: TaskChatToolCall): string | null {
@@ -490,7 +507,10 @@ export function PermissionDialog({
       ),
     [blockKind, codePreviewSettings, intl, rawFileSummaries, theme, toolCall, workspacePath],
   );
-  const displayReason = useMemo(() => getPermissionDisplayReason(request), [request]);
+  const displayReason = useMemo(
+    () => localizeAgentHarnessPermissionReason(getPermissionDisplayReason(request), intl),
+    [intl, request],
+  );
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [feedback, setFeedback] = useState("");
   const optionRefs = useRef<Array<HTMLButtonElement | null>>([]);

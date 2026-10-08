@@ -23,7 +23,10 @@ import {
   type TraceContext,
   type TurnId,
 } from "@zcode/contracts";
-import { getAgentHarnessCatalogEntry } from "@zcode/shared/agent-harness";
+import {
+  formatAgentHarnessApprovalReason,
+  getAgentHarnessCatalogEntry,
+} from "@zcode/shared/agent-harness";
 import { createRuntimeAssistantEntry } from "../../agent/message-history.js";
 import { createStructuredPatch } from "../../tool/diff.js";
 import { createToolResultDisplay } from "../../tool/executor/result-display.js";
@@ -167,8 +170,7 @@ async function requestHarnessApproval(
   if (runtime.harnessState.sessionApprovedTools.has(request.toolName)) {
     return { decision: "allow" };
   }
-  const label = getAgentHarnessCatalogEntry(harness).label;
-  const reason = request.reason ?? `${label} wants to run ${request.toolName}`;
+  const reason = request.reason ?? formatAgentHarnessApprovalReason(harness, request.toolName);
   const requestId = `perm_${crypto.randomUUID()}`;
   await writer.emit(SessionEventType.PermissionRequested, {
     requestId,

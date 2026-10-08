@@ -5546,6 +5546,10 @@ const zhCN: Record<string, string> = {
   "chat.quota.action.refresh": "刷新额度",
 
   // 权限请求
+  "chat.permission.agentHarness.edit": "{harness} 请求修改文件",
+  "chat.permission.agentHarness.write": "{harness} 请求写入文件",
+  "chat.permission.agentHarness.command": "{harness} 请求运行命令",
+  "chat.permission.agentHarness.tool": "{harness} 请求使用 {tool}",
   "chat.permission.title": "需要权限",
   "chat.permission.awaitingApproval": "等待确认",
   "chat.permission.approve": "允许",

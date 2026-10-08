@@ -5803,6 +5803,10 @@ const enUS: Record<string, string> = {
   "chat.quota.action.refresh": "Refresh quota",
 
   // Permissions
+  "chat.permission.agentHarness.edit": "{harness} wants to edit a file",
+  "chat.permission.agentHarness.write": "{harness} wants to write a file",
+  "chat.permission.agentHarness.command": "{harness} wants to run a command",
+  "chat.permission.agentHarness.tool": "{harness} wants to use {tool}",
   "chat.permission.title": "Permission required",
   "chat.permission.awaitingApproval": "Awaiting approval",
   "chat.permission.approve": "Allow",
