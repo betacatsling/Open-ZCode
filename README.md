@@ -16,7 +16,7 @@ Open ZCode 基于开源的 AI 编程工作台 [ZCode](https://github.com/zai-org
 
 ![演示动图：会话中途从 Claude Code 切换到 Codex](docs/media/zcode-selectable-harness-demo.gif)
 
-▶ 完整演示视频（2 分 33 秒，中文界面与字幕）：[docs/media/zcode-selectable-harness-demo.mp4](docs/media/zcode-selectable-harness-demo.mp4)，也可在 [v0.1.0 Release](https://github.com/betacatsling/Open-ZCode/releases/tag/v0.1.0) 下载。
+▶ 完整演示视频（约 2 分钟，中文界面与字幕）：[docs/media/zcode-selectable-harness-demo.mp4](docs/media/zcode-selectable-harness-demo.mp4)，也可在 [v0.1.0 Release](https://github.com/betacatsling/Open-ZCode/releases/tag/v0.1.0) 下载。
 
 > 演示里的 claude / codex / pi 都是真实安装的 CLI，但它们的模型请求指向本机的 mock 模型服务，没有调用真实模型 API，也没有使用真实密钥。
 
@@ -25,7 +25,7 @@ Open ZCode 基于开源的 AI 编程工作台 [ZCode](https://github.com/zai-org
 | ![](docs/media/01-harness-menu.png)        | ![](docs/media/02-claude-approval.png)   |
 | **中途切换到 Codex：交接提示**             | **Codex 编辑的行内 diff（可撤销）**      |
 | ![](docs/media/04-codex-switch-notice.png) | ![](docs/media/06-codex-inline-diff.png) |
-| **pi 的 bash 审批**                        | **pi 的原生终端工具卡片**                |
+| **pi 运行命令前的审批**                    | **pi 的原生终端工具卡片**                |
 | ![](docs/media/07-pi-approval.png)         | ![](docs/media/08-pi-bash-card.png)      |
 
 ## 功能
@@ -112,7 +112,7 @@ export ZCODE_AGENT_SERVER_ARGS_JSON='["<仓库路径>/apps/zcode-cli/packages/cl
 
 > Not affiliated with or endorsed by Z.AI, Anthropic, OpenAI, or the pi authors.
 
-**Demo:** see the GIF above, the full video at [docs/media/zcode-selectable-harness-demo.mp4](docs/media/zcode-selectable-harness-demo.mp4) (2:33, Chinese UI and captions), or the [v0.1.0 release](https://github.com/betacatsling/Open-ZCode/releases/tag/v0.1.0). The CLIs in the demo are real, but they talk to a local mock model server. No real model APIs or keys are used.
+**Demo:** see the GIF above, the full video at [docs/media/zcode-selectable-harness-demo.mp4](docs/media/zcode-selectable-harness-demo.mp4) (about 2 minutes, Chinese UI and captions), or the [v0.1.0 release](https://github.com/betacatsling/Open-ZCode/releases/tag/v0.1.0). The CLIs in the demo are real, but they talk to a local mock model server. No real model APIs or keys are used.
 
 **Features**
 
