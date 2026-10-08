@@ -24,6 +24,7 @@ import type { GoalCompletionVerificationOutput } from "../tools/target.js";
 import type { PermissionOptionsPolicy, PermissionUpdate } from "./permission.port.js";
 import type { ToolResultDisplayPayload } from "../tools/tool-result-metadata.js";
 import type { ModelSelection } from "../model/model.js";
+import type { AgentHarnessSelection } from "@zcode/shared/agent-harness";
 
 // -----------------------------------------------
 // Collaboration Mode and Risk Level
@@ -290,6 +291,8 @@ export interface TurnInputIntentMetadata {
   modelSelection?: ModelSelection;
   /** 与本次用户 Submission 一起固定的协作模式。 */
   mode?: "build" | "edit" | "plan" | "yolo";
+  /** 与本次用户 Submission 一起固定的 agent harness；开跑时应用为 Session 选择。 */
+  harness?: AgentHarnessSelection;
   admissionSeq: number;
   admittedAt: number;
   requestedDelivery: "auto" | "startNow" | "queue" | "guide";

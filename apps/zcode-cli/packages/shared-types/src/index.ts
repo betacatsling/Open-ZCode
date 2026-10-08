@@ -33,6 +33,8 @@ export type GlobalOptions = {
   detectedLocale?: GlobalDetectedLocale;
   enableWorkflow?: boolean;
   force: boolean;
+  /** 本次会话使用的 agent harness（zcode / claude-code / codex / pi）及其模型、思考档位。 */
+  harness?: { harness: string; model?: string; thought?: string };
   json: boolean;
   locale?: GlobalLocale;
   memoryBench?: boolean;

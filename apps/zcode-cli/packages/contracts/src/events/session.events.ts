@@ -1,3 +1,4 @@
+import type { AgentHarnessSelection } from "@zcode/shared/agent-harness";
 import type { ExecutionOutputPreview } from "../interfaces/execution.port.js";
 import type { RuntimeInputPresentation } from "../interfaces/runtime-input-presentation.js";
 /* eslint-disable max-lines -- session event 契约集中在单文件导出，避免 app/agent 协议类型分散后漂移。 */
@@ -87,6 +88,8 @@ export const SessionEventType = {
   SessionCompacted: "session_compacted",
   SessionTitleUpdated: "session_title_updated",
   SessionModeChanged: "session_mode_changed",
+  // additive：会话的 agent harness 选择变化（v4 投影 → config.harness）。
+  SessionHarnessChanged: "session_harness_changed",
   SessionEnded: "session_ended",
   TurnStarted: "turn_started",
   TurnInputReceived: "turn_input_received",
@@ -648,6 +651,13 @@ export interface SessionModeChangedPayload {
   toolCallId?: ToolCallId;
 }
 
+export interface SessionHarnessChangedPayload {
+  harness: AgentHarnessSelection;
+  /** 缺省表示恢复（resume）时的重放，而不是一次切换。 */
+  previousHarness?: AgentHarnessSelection;
+  source: "command" | "system";
+}
+
 export type TargetCompletionVerificationStatus =
   | "started"
   | "completed"
@@ -1179,6 +1189,7 @@ export type SessionEventPayload =
   | SessionCompactedPayload
   | SessionTitleUpdatedPayload
   | SessionModeChangedPayload
+  | SessionHarnessChangedPayload
   | TurnStartedPayload
   | TurnInputReceivedPayload
   | TurnSteerQueuedPayload

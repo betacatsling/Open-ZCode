@@ -13,6 +13,7 @@ export * from "./interfaces/image-processor.port.js";
 export * from "./interfaces/pdf-document.port.js";
 export * from "./interfaces/permission.port.js";
 export * from "./interfaces/session.port.js";
+export * from "./interfaces/agent-harness.port.js";
 export * from "./interfaces/session-mailbox.port.js";
 export * from "./interfaces/session-store.port.js";
 export * from "./interfaces/input-history.port.js";

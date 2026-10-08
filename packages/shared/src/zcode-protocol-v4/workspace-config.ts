@@ -22,6 +22,9 @@ export const workspaceConfigSelectValueSchema = z.object({
   // 缺失表示旧 payload/能力未知；空数组表示 catalog 已知没有可选 reasoning 档位。
   modelThoughtLevels: z.array(z.string()).optional(),
   modelDefaultThoughtLevel: z.string().optional(),
+  // additive（harness 选项）：本机是否可用，以及版本号或安装/登录提示。
+  available: z.boolean().optional(),
+  detail: z.string().optional(),
 });
 export type WorkspaceConfigSelectValue = z.infer<typeof workspaceConfigSelectValueSchema>;
 

@@ -24,6 +24,7 @@ import { z } from "zod";
 export * from "../process-diagnostic.js";
 import { errorAttributionSchema } from "../zcode-protocol-v4/snapshot.js";
 import { modelSelectionSchema } from "../model-selection.js";
+import { agentHarnessAvailabilitySchema } from "../agent-harness.js";
 import { completeModelPropertiesDataSchema } from "../model-config.js";
 import { accountProviderUnavailableReasonSchema } from "../account-provider-state.js";
 import { modelExecutionSchema } from "../model-execution.js";
@@ -2003,6 +2004,8 @@ export const zcodeWorkspacePresentationSchema = z
     workspace: zcodeWorkspaceRefSchema,
     mode: zcodeSessionModeSchema,
     slashCommands: z.array(zcodeSlashCommandSchema),
+    // additive：本机外部 agent harness 可用性（旧 Agent 不返回）。
+    harnesses: z.array(agentHarnessAvailabilitySchema).optional(),
   })
   .strict();
 export type ZCodeWorkspacePresentation = z.infer<typeof zcodeWorkspacePresentationSchema>;

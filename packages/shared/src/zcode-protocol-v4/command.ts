@@ -7,6 +7,7 @@ import { conversationRowTargetSchema, timestampSchema } from "./core.js";
 import { attachmentRefSchema } from "./attachment-ref.js";
 import { v4ConversationFileRewindPreviewResultSchema } from "./transport.js";
 import { modelSelectionSchema } from "../model-selection.js";
+import { agentHarnessSelectionSchema } from "../agent-harness.js";
 import { modelExecutionSchema } from "../model-execution.js";
 import { submissionModeSchema } from "./submission.js";
 import { zcodeAutomationBotDeliveryTargetSchema } from "../bots.js";
@@ -38,6 +39,8 @@ const createSessionRequestedConfigSchema = z.object({
   // 会把“没传 mode”误变成“请求切回 build”，覆盖 workspace 默认 yolo。
   mode: z.string().optional(),
   planEnabled: z.boolean().optional(),
+  // additive：会话的 agent harness（缺省 = ZCode 自带 runtime）。
+  harness: agentHarnessSelectionSchema.optional(),
 });
 
 // ── 命令 payload 全集 ──
@@ -52,6 +55,7 @@ export const commandPayloadSchemas = {
         modelSelection: modelSelectionSchema.optional(),
         mode: submissionModeSchema.optional(),
         planEnabled: z.boolean().optional(),
+        harness: agentHarnessSelectionSchema.optional(),
       })
       .optional(),
     config: createSessionRequestedConfigSchema.optional(),
@@ -98,6 +102,9 @@ export const commandPayloadSchemas = {
       modelSelection: modelSelectionSchema.optional(),
       mode: submissionModeSchema.optional(),
       planEnabled: z.boolean().optional(),
+      // additive：本次 Submission 使用的 agent harness；与 modelSelection 一样在开跑时
+      // 应用为 Session 选择。外部 harness 自己选模型，因此此时 modelSelection 可缺省。
+      harness: agentHarnessSelectionSchema.optional(),
       // 本次执行仍使用上面的标准 Selection；这里只携带不持久化语义、动态鉴权和 child 策略。
       // 仅 idle startNow 接受，防止 Secret/Ticket 进入普通 CommandInbox。
       modelExecution: modelExecutionSchema.optional(),

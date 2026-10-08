@@ -20,6 +20,7 @@ export * from "./dynamic-workflow-snippet.port.js";
 // `subagent_model` 解析都从这里拿「有哪些模型」。
 export * from "./model-catalog.port.js";
 export * from "./automation.port.js";
+export * from "./agent-harness.port.js";
 export * from "./mcp.port.js";
 export * from "./browser-control.port.js";
 export * from "./shared.js";

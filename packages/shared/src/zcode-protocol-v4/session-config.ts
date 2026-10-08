@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { modelSelectionSchema } from "../model-selection.js";
+import { agentHarnessSelectionSchema } from "../agent-harness.js";
 
 // ── config──
 export const sessionConfigStateSchema = z.object({
@@ -16,6 +17,9 @@ export const sessionConfigStateSchema = z.object({
   // 必须带 default 才不破坏旧快照/旧发送端的解析；投影经 SessionModeChanged 事件更新。
   mode: z.string().default("build"),
   planEnabled: z.boolean().optional(),
+  // additive：会话的 agent harness 选择；缺省 = ZCode 自带 runtime（旧快照兼容）。
+  // 投影经 SessionHarnessChanged 事件更新。
+  harness: agentHarnessSelectionSchema.optional(),
   /** 明确审批结果；草稿按 interactionId 消费一次，普通 mode 更新不重置它。 */
   permissionGrant: z.object({ interactionId: z.string().min(1) }).optional(),
   /** 最近工具转换的关联，供草稿定向同步；不新增可见历史事件。 */

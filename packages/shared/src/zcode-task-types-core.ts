@@ -390,6 +390,10 @@ export interface ZCodeConfigSelectValue {
   modelThoughtLevels?: string[];
   /** 模型目录声明的默认 reasoning 档位，不代表用户显式选择 */
   modelDefaultThoughtLevel?: string;
+  /** harness 选项：本机是否可用（缺失表示未知） */
+  available?: boolean;
+  /** harness 选项：版本号或安装/登录提示 */
+  detail?: string;
 }
 export interface ZCodeSlashCommand {
   name: string;

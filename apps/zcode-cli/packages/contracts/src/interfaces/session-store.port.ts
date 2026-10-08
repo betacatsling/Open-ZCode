@@ -804,6 +804,8 @@ export const SESSION_ENTRY_TARGET_COMPLETION_VERIFICATION =
 export const SESSION_ENTRY_BASH_SHELL_SELECTION = "runtime/bash_shell_selection" as const;
 export const SESSION_ENTRY_MODEL_SELECTION = "runtime/model_selection" as const;
 export const SESSION_ENTRY_EXECUTION_STATE = "runtime/execution_state" as const;
+/** 会话的 agent harness 选择与外部 harness 会话绑定（见 docs/agent-harness.md）。 */
+export const SESSION_ENTRY_HARNESS_STATE = "runtime/harness_state" as const;
 export const SESSION_ENTRY_USER_INPUT_AUTO_RESOLUTION =
   "runtime/user_input_auto_resolution" as const;
 export const SESSION_ENTRY_WORKSPACE_CHECKPOINT = "runtime/workspace_checkpoint" as const;
@@ -814,6 +816,7 @@ export const SESSION_ENTRY_TYPES = [
   SESSION_ENTRY_BASH_SHELL_SELECTION,
   SESSION_ENTRY_MODEL_SELECTION,
   SESSION_ENTRY_EXECUTION_STATE,
+  SESSION_ENTRY_HARNESS_STATE,
   SESSION_ENTRY_USER_INPUT_AUTO_RESOLUTION,
   SESSION_ENTRY_WORKSPACE_CHECKPOINT,
   SESSION_ENTRY_WORKSPACE_FILE_REWIND,
