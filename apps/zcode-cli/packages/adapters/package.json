@@ -26,6 +26,10 @@
       "types": "./dist/exec/index.d.ts",
       "import": "./dist/exec/index.js"
     },
+    "./agent-harness": {
+      "types": "./dist/agent-harness/index.d.ts",
+      "import": "./dist/agent-harness/index.js"
+    },
     "./http": {
       "types": "./dist/http/index.d.ts",
       "import": "./dist/http/index.js"
