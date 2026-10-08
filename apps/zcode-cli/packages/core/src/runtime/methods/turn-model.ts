@@ -11,6 +11,8 @@ import { cloneModelSelection } from "../model-selection.js";
 import { createRefreshRuntimeHeadersBeforeModelAttempt } from "./model-runtime-headers.js";
 import { createRuntimeModel, withModelInvocationContext } from "./runtime-model.js";
 import { applyRuntimeExecutionState } from "../execution-state.js";
+import { normalizeAgentHarnessSelection } from "@zcode/shared/agent-harness";
+import { applyHarnessSelection, isExternalHarnessSelection } from "../harness/state.js";
 
 export function createTurnModel(
   runtime: AgentRuntimeInternal,
@@ -47,8 +49,15 @@ export async function applySubmissionExecutionState(
   const selection = intent?.modelSelection;
   const previousSelection = runtime.getSessionModelSelection();
   let model = preparedModel;
+  const harnessSelection = intent?.harness
+    ? normalizeAgentHarnessSelection(intent.harness)
+    : undefined;
+  // 外部 harness 自己选择模型：本轮不创建 ZCode Model，携带的 ZCode 模型选择也不改写会话。
+  const externalHarness = isExternalHarnessSelection(
+    harnessSelection ?? runtime.harnessState.selection,
+  );
 
-  if (selection) {
+  if (selection && !externalHarness) {
     model ??= createTurnModel(runtime, {
       selection,
       requestDependencies: modelExecution?.requestDependencies,
@@ -72,6 +81,10 @@ export async function applySubmissionExecutionState(
 
   if (intent?.mode !== undefined || intent?.planEnabled !== undefined) {
     await applyRuntimeExecutionState(runtime, intent, { source: "command", traceContext });
+  }
+
+  if (harnessSelection && modelExecution?.selectionScope !== "execution") {
+    await applyHarnessSelection(runtime, harnessSelection, { source: "command", traceContext });
   }
 
   return model;

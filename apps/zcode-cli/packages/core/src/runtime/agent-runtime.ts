@@ -1,3 +1,5 @@
+import { createRuntimeHarnessState, type RuntimeHarnessState } from "./harness/state.js";
+import type { AgentHarnessSelection } from "@zcode/contracts";
 import { DEFAULT_ZCODE_MODEL_CONTEXT_BUDGET_STRATEGY, resolveExecutionState } from "@zcode/shared";
 import type { BackgroundBashOutputResult } from "@zcode/shared";
 import {
@@ -152,6 +154,8 @@ export class AgentRuntime {
   private modelIoDir?: string;
   private providerRuntimeHeadersPort?: AgentRuntimeDeps["providerRuntimeHeadersPort"];
   private browserControlPort?: AgentRuntimeDeps["browserControlPort"];
+  private harnessRunner?: AgentRuntimeDeps["harnessRunner"];
+  private harnessState: RuntimeHarnessState = createRuntimeHarnessState();
   /** 模型请求准入端口；随每次模型请求进调用上下文。 */
   private modelRequestAdmission?: AgentRuntimeDeps["modelRequestAdmission"];
   private sessionModelSelection: ModelSelection | undefined;
@@ -270,6 +274,7 @@ export class AgentRuntime {
     this.modelIoDir = deps.modelIoDir;
     this.providerRuntimeHeadersPort = deps.providerRuntimeHeadersPort;
     this.browserControlPort = deps.browserControlPort;
+    this.harnessRunner = deps.harnessRunner;
     this.modelRequestAdmission = deps.modelRequestAdmission;
     // 旧会话的选择缺失不能阻断历史恢复；不在这里制造默认模型。
     this.sessionModelSelection =
@@ -354,6 +359,12 @@ export interface AgentRuntime {
   ): Promise<void>;
   getSessionModelSelection(): ModelSelection | undefined;
   setSessionModelSelection(selection: ModelSelection | undefined): void;
+  /** 会话的 agent harness 选择（zcode = 自带 runtime）。 */
+  getHarnessSelection(): AgentHarnessSelection;
+  setHarnessSelection(
+    selection: AgentHarnessSelection,
+    traceContext?: TraceContext,
+  ): Promise<boolean>;
   getProjectId(): ProjectId;
   ensureSessionPersistedForExternalActivity(
     input: string,

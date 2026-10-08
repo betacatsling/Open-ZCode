@@ -70,6 +70,15 @@ export const parseGlobalArgs = (argv: string[]) =>
       mode: {
         type: "string",
       },
+      harness: {
+        type: "string",
+      },
+      "harness-model": {
+        type: "string",
+      },
+      "harness-thought": {
+        type: "string",
+      },
       verbose: {
         type: "boolean",
       },

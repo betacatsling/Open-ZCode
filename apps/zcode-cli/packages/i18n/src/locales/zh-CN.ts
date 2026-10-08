@@ -43,6 +43,9 @@ export const zhCN: ZCodeCopy = {
   --force-mcs      对 Anthropic provider 强制启用 mid-conversation system 投影
   --locale <locale>  UI 语言：en-US、zh-CN 或 auto
   --mode <mode>    prompt 权限模式：build、edit、plan 或 yolo（--prompt 默认 yolo）
+  --harness <id>   本会话使用的 agent harness：zcode、claude-code、codex 或 pi
+  --harness-model <model>    传给外部 harness 的模型（缺省为 harness 自己的默认值）
+  --harness-thought <level>  传给外部 harness 的思考深度
   --resume <sessionId>  按 sessionId 恢复持久化 session（sess_...）
   --target <text>  在 headless 模式运行或设置 session goal
   --target-replace 替换 --target 已存在的 goal

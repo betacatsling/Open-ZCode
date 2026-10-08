@@ -43,6 +43,9 @@ Options:
   --force-mcs      Force mid-conversation system projection for Anthropic providers
   --locale <locale>  UI locale: en-US, zh-CN, or auto
   --mode <mode>    Permission mode for prompts: build, edit, plan, or yolo (default: yolo for --prompt)
+  --harness <id>   Agent harness for this session: zcode, claude-code, codex, or pi
+  --harness-model <model>    Model passed to the external harness (default: harness default)
+  --harness-thought <level>  Reasoning effort passed to the external harness
   --resume <sessionId>  Resume a persisted session by sessionId (sess_...)
   --target <text>  Run or set the session goal in headless mode
   --target-replace Replace any existing session goal set by --target

@@ -81,6 +81,8 @@ export interface AgentRuntimeInternal
   modelIoDir?: string;
   providerRuntimeHeadersPort?: ProviderRuntimeHeadersPort;
   browserControlPort?: AgentRuntimeDeps["browserControlPort"];
+  harnessRunner?: AgentRuntimeDeps["harnessRunner"];
+  harnessState: import("./harness/state.js").RuntimeHarnessState;
   modelRequestAdmission?: AgentRuntimeDeps["modelRequestAdmission"];
   sessionModelSelection: ModelSelection | undefined;
   messageHistory: MessageHistory;

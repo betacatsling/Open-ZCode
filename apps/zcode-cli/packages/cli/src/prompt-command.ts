@@ -2,6 +2,7 @@ import { extname } from "node:path";
 import { formatJson, type PresentationSurface } from "@zcode/core";
 import type { RunContext, GlobalOptions } from "@zcode/shared-types";
 import { loadBootstrapModule } from "./bootstrap-loader.js";
+import { agentHarnessSelectionSchema } from "@zcode/shared/agent-harness";
 import {
   buildManualSkillPrompt,
   createCommandCenter,
@@ -289,6 +290,16 @@ export const runPrompt = async (
     //
     // 挂载点刻意在 command-center 分支**之后**：`/expert`、`/goal` 走不到 submitPrompt，
     // 过去也从不透出事件行，在这里挂就会给那条路径凭空加出 NDJSON 行。
+    if (options.harness) {
+      // --harness：本会话交给外部 agent harness 执行（resume 时覆盖会话原有选择）。
+      const harness = agentHarnessSelectionSchema.safeParse(options.harness);
+      if (!harness.success) {
+        throw new Error(
+          `--harness must be one of zcode, claude-code, codex, pi (received: ${options.harness.harness}).`,
+        );
+      }
+      await app.runtime.setHarnessSelection(harness.data);
+    }
     const subscribeEvents = readRuntimeEventSubscriber(app.runtime);
     detachEvents = subscribeEvents?.({ onSessionEvent: observer.observe });
     const runtimeFacts = readHeadlessRuntimeFacts(app.runtime);

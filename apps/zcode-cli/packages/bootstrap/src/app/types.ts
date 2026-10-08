@@ -94,7 +94,11 @@ import type {
 import type { NodeReplBrowserBroker } from "./node-repl-browser-broker.js";
 import type { SessionTranscriptMessage } from "../session-transcript.js";
 import type { WorkspaceHookReviewCommandResult } from "./workspace-hook-review-controller.js";
-import type { AgentTelemetryRuntimeOwner, WorkspaceHookPolicy } from "@zcode/contracts";
+import type {
+  AgentHarnessRunnerPort,
+  AgentTelemetryRuntimeOwner,
+  WorkspaceHookPolicy,
+} from "@zcode/contracts";
 import type { ProviderRegistryModelSource } from "./provider-registry-model-runtime.js";
 
 export interface WorkspaceHookReviewHostContext {
@@ -170,6 +174,8 @@ export interface ZCodeAppOptions {
   /** 由宿主提供 per-app lease；产出的端口归 app 所有。 */
   mcpPortFactory?: (input: { workingDirectory?: string }) => McpPort;
   permissionBroker?: PermissionBrokerPort;
+  /** 外部 agent harness（Claude Code / Codex / pi）运行器；缺省按 env 创建。 */
+  harnessRunner?: AgentHarnessRunnerPort;
   eventSink?: SessionEventSink;
   env?: NodeJS.ProcessEnv;
   platform?: NodeJS.Platform | string;

@@ -64,6 +64,8 @@ import { appendBrowserTurnScreenshot } from "./browser-turn-screenshot.js";
 import { clearBrowserTurnState } from "../../repl/browser-turn-state.js";
 import { applySubmissionExecutionState, createTurnModel } from "./turn-model.js";
 import { rebuildContextPrefix } from "./context-refresh.js";
+import { runExternalHarnessTurn } from "../harness/external-turn.js";
+import { isExternalHarnessSelection, resolveTurnHarnessSelection } from "../harness/state.js";
 
 const TARGET_RUN_HEARTBEAT_MS = 15_000;
 
@@ -104,6 +106,15 @@ export async function executeTurnCommand(
   const admittedOutputStyle = this.config.outputStyle;
   const compactInstructions = parseCompactCommand(input);
   const rewindCommand = parseRewindCommand(input);
+  // 外部 harness（Claude Code / Codex / pi）接管整个 agent loop：本轮不创建 ZCode Model、
+  // 不构造 ZCode 上下文，/compact 原样交给 harness。/rewind 仍由 ZCode 处理。
+  const admittedHarness = resolveTurnHarnessSelection(this, options?.intent);
+  const externalHarness =
+    rewindCommand === null &&
+    options?.modelExecution?.selectionScope !== "execution" &&
+    isExternalHarnessSelection(admittedHarness)
+      ? admittedHarness
+      : undefined;
   const turnId = startReservation?.turnId ?? createTurnId();
   const queryId = options?.queryId ?? (options?.inputId as QueryId | undefined) ?? createQueryId();
   const displayInput = options?.displayInput ?? input;
@@ -188,7 +199,7 @@ export async function executeTurnCommand(
       let admittedModel;
       try {
         admittedModel =
-          rewindCommand === null
+          rewindCommand === null && !externalHarness
             ? createTurnModel(this, {
                 requestDependencies: options?.modelExecution?.requestDependencies,
                 selection: admittedModelSelection,
@@ -212,32 +223,36 @@ export async function executeTurnCommand(
         });
         throw coreError;
       }
-      let phaseStartedAt = startTurnPhase("context_initialization");
-      if (this.contextInitialized) {
-        // 每个后续 model step 都按该步骤实际持有的 Model 重新投影 Context；
-        // Session Selection 只决定未来创建哪个 Model，不能充当执行事实。
-        rebuildContextPrefix(this, { model: admittedModel });
-      } else {
-        // 首轮初始化已经用 admitted Model 构造并安装完整 Context，随后再 rebuild
-        // 会把同一 Prefix 连续构造两次。未初始化与已初始化分支互斥，每个 model step 只构造一次。
-        await this.ensureContextInitialized(turnTraceContext, admittedModel);
+      let phaseStartedAt = Date.now();
+      if (!externalHarness) {
+        // 外部 harness 自己管理系统提示词、上下文与 SessionStart hook，ZCode 侧跳过。
+        phaseStartedAt = startTurnPhase("context_initialization");
+        if (this.contextInitialized) {
+          // 每个后续 model step 都按该步骤实际持有的 Model 重新投影 Context；
+          // Session Selection 只决定未来创建哪个 Model，不能充当执行事实。
+          rebuildContextPrefix(this, { model: admittedModel });
+        } else {
+          // 首轮初始化已经用 admitted Model 构造并安装完整 Context，随后再 rebuild
+          // 会把同一 Prefix 连续构造两次。未初始化与已初始化分支互斥，每个 model step 只构造一次。
+          await this.ensureContextInitialized(turnTraceContext, admittedModel);
+        }
+        completeTurnPhase("context_initialization", phaseStartedAt);
+        throwIfTurnAborted(turnAbortSignal);
+        phaseStartedAt = startTurnPhase("session_start_hooks");
+        const sessionStartHookResult = await this.runSessionStartHooks(
+          "startup",
+          turnTraceContext,
+          turnAbortSignal,
+          admittedModel,
+        );
+        completeTurnPhase("session_start_hooks", phaseStartedAt);
+        this.injectHookAdditionalContextIntoMessageHistory(
+          HookEventName.SessionStart,
+          sessionStartHookResult.additionalContexts,
+        );
       }
-      completeTurnPhase("context_initialization", phaseStartedAt);
-      throwIfTurnAborted(turnAbortSignal);
-      phaseStartedAt = startTurnPhase("session_start_hooks");
-      const sessionStartHookResult = await this.runSessionStartHooks(
-        "startup",
-        turnTraceContext,
-        turnAbortSignal,
-        admittedModel,
-      );
-      completeTurnPhase("session_start_hooks", phaseStartedAt);
-      this.injectHookAdditionalContextIntoMessageHistory(
-        HookEventName.SessionStart,
-        sessionStartHookResult.additionalContexts,
-      );
 
-      if (compactInstructions !== null) {
+      if (compactInstructions !== null && !externalHarness) {
         const compactModel = await applySubmissionExecutionState(
           this,
           options?.intent,
@@ -529,15 +544,18 @@ export async function executeTurnCommand(
           );
           // 标题生成以前等主 turn 成功后才启动，用户 stop/cancel 首轮请求时
           // generated title 永远没有机会发起。首条 query 持久化后即可异步生成，避免被主链路取消拖死。
-          const titleGenerationStarted = maybeStartSessionTitleGeneration.call(
-            this,
-            displayInput,
-            userMessageId,
-            turnTraceContext,
-            {
-              deferIfProviderRuntimeHeadersRefresh: true,
-            },
-          );
+          // 外部 harness 会话不把用户输入发给 ZCode 模型服务生成标题。
+          const titleGenerationStarted =
+            externalHarness !== undefined ||
+            maybeStartSessionTitleGeneration.call(
+              this,
+              displayInput,
+              userMessageId,
+              turnTraceContext,
+              {
+                deferIfProviderRuntimeHeadersRefresh: true,
+              },
+            );
           shouldRetryTitleGenerationAfterTurn = !titleGenerationStarted;
         }
         // Plugin reminder 必须在对应 user 消息写入历史和 session store 后再追加：
@@ -554,6 +572,74 @@ export async function executeTurnCommand(
         }
 
         this.messageHistory.setCacheMiss();
+        if (externalHarness) {
+          // harness 运行期间无法接收中途插话：新输入进入队列，等本轮结束后作为下一轮发送。
+          if (activeTurn) activeTurn.steerable = false;
+          phaseStartedAt = startTurnPhase("external_harness_turn");
+          const harnessResult = await runExternalHarnessTurn(this, {
+            selection: externalHarness,
+            prompt: input,
+            events,
+            turnId,
+            traceContext: turnTraceContext,
+            abortSignal: turnAbortSignal,
+            userMessageId,
+          });
+          completeTurnPhase("external_harness_turn", phaseStartedAt);
+          const turnUsage = createModelUsageSummaryFromEvents(events);
+          await this.accountTargetTurnCompletion({
+            inputID: targetRunInputID,
+            startedAtMs: turnStartedAtMs,
+            startedTarget,
+            traceContext: turnTraceContext,
+            usage: turnUsage,
+          });
+          const completeEvent = this.createEvent(
+            SessionEventType.TurnComplete,
+            {
+              response: harnessResult.response,
+              tokenCount: harnessResult.tokenCount,
+              usage: turnUsage,
+              toolCallCount: harnessResult.toolCallCount,
+              historyRoundCount: harnessResult.historyRoundCount,
+              duration: Date.now() - turnMachine.state.startedAt.getTime(),
+              resultType: "success",
+              cacheStats: this.messageHistory.getCacheStats(),
+              inputId: options?.inputId,
+            },
+            turnTraceContext,
+          );
+          await this.appendEvent(completeEvent, turnTraceContext);
+          events.push(completeEvent);
+          await recordTurnUsageFact(this, {
+            completedAt: Date.now(),
+            events,
+            startedAt: turnStartedAtMs,
+            status: "completed",
+            traceContext: turnTraceContext,
+            turnId,
+            userMessageId,
+          });
+          this.turnNumber++;
+          const projection = await this.rebuildProjection();
+          this.logger?.info("Turn completed", {
+            ...traceContextToLogContext(turnTraceContext),
+            agentHarness: externalHarness.harness,
+            durationMs: Date.now() - turnMachine.state.startedAt.getTime(),
+            event: "turn.completed",
+            module: "core.runtime",
+            status: "completed",
+            toolCallCount: harnessResult.toolCallCount,
+          });
+          return {
+            response: harnessResult.response,
+            turnId,
+            traceId,
+            usage: turnUsage,
+            events,
+            projection,
+          };
+        }
         const loopModel = submissionModel ?? admittedModel;
         if (!loopModel) {
           throw new Error("Turn model was not created before execution");

@@ -1,6 +1,7 @@
 import { restorePermissionGrantMarker } from "../helpers/permission-grant-resume.js";
 import { executionStateSchema, resolveExecutionState } from "@zcode/shared";
 import { SESSION_ENTRY_EXECUTION_STATE } from "@zcode/contracts";
+import { restoreHarnessState } from "../harness/state.js";
 import {
   CoreErrorType,
   HookEventName,
@@ -216,6 +217,7 @@ export async function resumeFromStore(
   }
 
   await restorePermissionGrantMarker(this, traceContext);
+  await restoreHarnessState(this);
 
   this.mainTurnCacheHitAggregate = mainTurnCacheHitAggregateFromMessages({
     activeMessages,

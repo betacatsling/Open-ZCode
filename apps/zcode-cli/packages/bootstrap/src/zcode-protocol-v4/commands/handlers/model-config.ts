@@ -184,6 +184,10 @@ export async function applyRequestedSessionConfig(
   record: V4SessionRecordView,
   config: NonNullable<CommandPayloadMap["createSession"]["config"]>,
 ): Promise<void> {
+  // harness 先于模型应用：外部 harness 不依赖 ZCode 模型服务，模型配置失败不能连坐它。
+  if (config.harness) {
+    await record.app.runtime.setHarnessSelection(config.harness, record.traceContext);
+  }
   await runSessionModelConfigMutation(record.app, async () => {
     const previousSelection = record.app.runtime.getSessionModelSelection();
     const previousModelSelection =

@@ -1521,6 +1521,9 @@ export function createConversationV4Gateway(
           : [],
         mode: record.app.getMode(),
         planEnabled: record.app.runtime.getPlanEnabled(),
+        ...(record.app.runtime.getHarnessSelection
+          ? { harness: record.app.runtime.getHarnessSelection() }
+          : {}),
         ...(record.app.runtime.lastPermissionGrantId
           ? { permissionGrant: { interactionId: record.app.runtime.lastPermissionGrantId } }
           : {}),

@@ -330,6 +330,8 @@ export interface AgentRuntimeDeps {
   executionPort?: ExecutionPort;
   /** browser-use 控制端口；透传到 ToolExecutionContext.browserControlPort 供 node_repl 使用。 */
   browserControlPort?: BrowserControlPort;
+  /** 外部 Agent Harness（Claude Code / Codex / pi）运行器；缺省时只能使用 ZCode 原生 harness。 */
+  harnessRunner?: import("@zcode/contracts").AgentHarnessRunnerPort;
   fileSystemPort?: FileSystemPort;
   httpClientPort?: HttpClientPort;
   imageProcessorPort?: ImageProcessorPort;

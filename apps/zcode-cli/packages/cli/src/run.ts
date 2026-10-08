@@ -103,6 +103,15 @@ const globalOptions = (
     detectedLocale,
     ...(values["enable-workflow"] === true ? { enableWorkflow: true } : {}),
     force: values.force === true,
+    ...(values.harness
+      ? {
+          harness: {
+            harness: values.harness,
+            ...(values["harness-model"] ? { model: values["harness-model"] } : {}),
+            ...(values["harness-thought"] ? { thought: values["harness-thought"] } : {}),
+          },
+        }
+      : {}),
     json: values.json === true,
     locale,
     ...(values["memory-bench"] === true ? { memoryBench: true } : {}),

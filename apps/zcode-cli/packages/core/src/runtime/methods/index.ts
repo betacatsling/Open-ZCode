@@ -6,6 +6,7 @@ import {
   setExecutionState,
 } from "./config.js";
 import { getMode, getPlanEnabled } from "./config.js";
+import { getHarnessSelection, setHarnessSelection } from "../harness/state.js";
 import { getSessionModelSelection, setSessionModelSelection } from "./config.js";
 import { getProjectId } from "./config.js";
 import { setWorkingDirectory } from "./config.js";
@@ -206,6 +207,8 @@ export function installAgentRuntimeMethods(ctor: AgentRuntimeConstructor): void 
   proto.getMode = getMode;
   proto.getPlanEnabled = getPlanEnabled;
   proto.getSessionModelSelection = getSessionModelSelection;
+  proto.getHarnessSelection = getHarnessSelection;
+  proto.setHarnessSelection = setHarnessSelection;
   proto.setSessionModelSelection = setSessionModelSelection;
   proto.getProjectId = getProjectId;
   proto.setWorkingDirectory = setWorkingDirectory;

@@ -7,7 +7,11 @@ import type {
   CommandResult,
   SubmissionMode,
 } from "@zcode/shared/zcode-protocol-v4";
-import type { ModelSelection } from "@zcode/shared";
+import type { AgentHarnessSelection, ModelSelection } from "@zcode/shared";
+import {
+  isExternalAgentHarness,
+  normalizeAgentHarnessSelection,
+} from "@zcode/shared/agent-harness";
 import { createModelExecutionContext } from "../../../zcode-protocol/model-execution.js";
 import type { SteerTurnOptions } from "../../../app/types.js";
 import { parseProviderQualifiedModelSelection } from "../../../app/provider-registry-selection.js";
@@ -140,31 +144,45 @@ export function resolveSubmittedExecutionState(
     modelSelection?: ModelSelection;
     mode?: SubmissionMode;
     planEnabled?: boolean;
+    harness?: AgentHarnessSelection;
   },
-): { modelSelection: ModelSelection; mode: SubmissionMode; planEnabled: boolean } {
+): {
+  modelSelection?: ModelSelection;
+  mode: SubmissionMode;
+  planEnabled: boolean;
+  harness?: AgentHarnessSelection;
+} {
   let modelSelection = payload.modelSelection;
+  // 外部 harness 自己选择模型：会话没有可用的 ZCode 模型时也允许提交（例如只装了 Claude Code）。
+  const harness = payload.harness ? normalizeAgentHarnessSelection(payload.harness) : undefined;
+  const effectiveHarness = harness ?? record.app.runtime?.getHarnessSelection?.();
+  const externalHarness = isExternalAgentHarness(effectiveHarness?.harness);
   if (!modelSelection) {
     const runtimeSelection = record.app.runtime?.getSessionModelSelection?.();
     const entrySelection = runtimeSelection
       ? undefined
       : parseProviderQualifiedModelSelection(record.app.getModel());
     if (!runtimeSelection && !entrySelection) {
-      throw new Error(`Session model must be provider-qualified: ${record.app.getModel()}`);
+      // 外部 harness：保持缺省，turn 不会创建 ZCode Model。
+      if (!externalHarness) {
+        throw new Error(`Session model must be provider-qualified: ${record.app.getModel()}`);
+      }
+    } else {
+      // getThoughtLevel() 是 Active Model 的 effective 展示事实。把它补回
+      // canonical intent 会把 Config 默认值伪装成显式 pin；旧发送端只能固定 Session
+      // 已经持有的稀疏 Selection，不能在 admission 时重新解释它。
+      modelSelection = runtimeSelection
+        ? {
+            providerId: runtimeSelection.providerId,
+            modelId: runtimeSelection.modelId,
+            ...(runtimeSelection.options ? { options: { ...runtimeSelection.options } } : {}),
+          }
+        : {
+            providerId: entrySelection!.providerId,
+            modelId: entrySelection!.modelId,
+            ...(entrySelection!.options ? { options: { ...entrySelection!.options } } : {}),
+          };
     }
-    // getThoughtLevel() 是 Active Model 的 effective 展示事实。把它补回
-    // canonical intent 会把 Config 默认值伪装成显式 pin；旧发送端只能固定 Session
-    // 已经持有的稀疏 Selection，不能在 admission 时重新解释它。
-    modelSelection = runtimeSelection
-      ? {
-          providerId: runtimeSelection.providerId,
-          modelId: runtimeSelection.modelId,
-          ...(runtimeSelection.options ? { options: { ...runtimeSelection.options } } : {}),
-        }
-      : {
-          providerId: entrySelection!.providerId,
-          modelId: entrySelection!.modelId,
-          ...(entrySelection!.options ? { options: { ...entrySelection!.options } } : {}),
-        };
   }
   const current = resolveExecutionState({
     mode: record.app.getMode?.(),
@@ -172,9 +190,10 @@ export function resolveSubmittedExecutionState(
   });
   const state = resolveExecutionState(payload, current);
   return {
-    modelSelection,
+    ...(modelSelection ? { modelSelection } : {}),
     mode: state.mode === "auto" ? "build" : state.mode,
     planEnabled: state.planEnabled,
+    ...(harness ? { harness } : {}),
   };
 }
 /**

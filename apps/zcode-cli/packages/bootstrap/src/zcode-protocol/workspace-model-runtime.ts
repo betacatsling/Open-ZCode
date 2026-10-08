@@ -8,6 +8,7 @@ import {
 } from "@zcode/shared";
 import type { ZCodeApp, ZCodeAppOptions } from "../app/types.js";
 import { listProtocolSlashCommands } from "./slash-commands.js";
+import { detectAgentHarnesses } from "../app/agent-harness-runner.js";
 import {
   parseParams,
   type ZCodeProtocolAgentServerContext,
@@ -21,9 +22,11 @@ export async function readWorkspacePresentation(
   rawParams: unknown,
 ) {
   const params = parseParams(zcodeWorkspaceReadPresentationParamsSchema, rawParams);
+  const harnesses = detectAgentHarnesses(context.deps.env);
   return {
     workspace: params.workspace,
     mode: "build" as const,
+    harnesses: await harnesses,
     slashCommands: await listProtocolSlashCommands({
       // 灰度门是 Host 判定的 workspace 级事实，目录装配读进程缓存。
       dynamicWorkflowEnabled: context.appRuntimePreferences.dynamicWorkflowEnabled,

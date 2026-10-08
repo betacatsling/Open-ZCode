@@ -11,7 +11,14 @@ import {
   projectToolActivity,
   clearSettledOutputPreviews,
 } from "./product-projection-bash-progress.js";
+import {
+  agentHarnessSelectionSchema,
+  normalizeAgentHarnessSelection,
+  sameAgentHarnessSelection,
+} from "@zcode/shared/agent-harness";
 import type {
+  AgentHarnessSelection,
+  SessionHarnessChangedPayload,
   CompactLifecyclePayload,
   AssistantFeedbackUpdatedPayload,
   DynamicWorkflowRunProgressPayload,
@@ -236,6 +243,8 @@ export interface SessionConfigSeed {
   thought?: string;
   thoughtLevels?: readonly string[];
   mode?: string;
+  /** 会话 agent harness（缺省 = zcode）。 */
+  harness?: AgentHarnessSelection;
 }
 
 export interface SessionUsageSeed {
@@ -487,6 +496,7 @@ export class ProductProjection {
   // 又避免后续种子覆盖新事件已原子发布的模型能力。
   private configThoughtLevelsTouchedByEvent = false;
   private configModeTouchedByEvent = false;
+  private configHarnessTouchedByEvent = false;
   // assistant 守恒：非运行期拒收的正文流计数（gateway 据此置 stale）。
   private droppedContentStreamEventCount = 0;
   // 读取期 legacy fallback 必须可观测；否则 normalizer 缺字段后仍会退化为“可见但不可寻址”。
@@ -603,6 +613,14 @@ export class ProductProjection {
       config.planEnabled !== seed.planEnabled
     ) {
       config.planEnabled = seed.planEnabled;
+      changed = true;
+    }
+    if (
+      !this.configHarnessTouchedByEvent &&
+      seed.harness &&
+      !sameAgentHarnessSelection(config.harness, seed.harness)
+    ) {
+      config.harness = { ...seed.harness };
       changed = true;
     }
     if (changed) {
@@ -1127,6 +1145,7 @@ export class ProductProjection {
     clone.configModelTouchedByEvent = this.configModelTouchedByEvent;
     clone.configThoughtLevelsTouchedByEvent = this.configThoughtLevelsTouchedByEvent;
     clone.configModeTouchedByEvent = this.configModeTouchedByEvent;
+    clone.configHarnessTouchedByEvent = this.configHarnessTouchedByEvent;
     clone.droppedContentStreamEventCount = this.droppedContentStreamEventCount;
     clone.normalizationDiagnostics = [...this.normalizationDiagnostics];
     return clone;
@@ -1170,6 +1189,7 @@ export class ProductProjection {
     this.configModelTouchedByEvent = candidate.configModelTouchedByEvent;
     this.configThoughtLevelsTouchedByEvent = candidate.configThoughtLevelsTouchedByEvent;
     this.configModeTouchedByEvent = candidate.configModeTouchedByEvent;
+    this.configHarnessTouchedByEvent = candidate.configHarnessTouchedByEvent;
     this.droppedContentStreamEventCount = candidate.droppedContentStreamEventCount;
     this.normalizationDiagnostics = candidate.normalizationDiagnostics;
   }
@@ -1410,6 +1430,8 @@ export class ProductProjection {
         return this.onFollowupModeChanged(event);
       case SessionEventType.SessionModeChanged:
         return this.onSessionModeChanged(event);
+      case SessionEventType.SessionHarnessChanged:
+        return this.onSessionHarnessChanged(event);
       case SessionEventType.TurnComplete:
         return this.onTurnComplete(event);
       case SessionEventType.TurnError:
@@ -3773,6 +3795,22 @@ export class ProductProjection {
           availability: computeAvailability(context),
           inputRouting: computeInputRouting(context, mode),
         },
+      },
+    ];
+  }
+
+  /** SessionHarnessChanged → config.harness（前端 harness 选择器的权威值）。 */
+  private onSessionHarnessChanged(event: SessionEvent): ConversationDelta[] {
+    const payload = event.payload as Partial<SessionHarnessChangedPayload>;
+    const parsed = agentHarnessSelectionSchema.safeParse(payload.harness);
+    if (!parsed.success) return [];
+    this.configHarnessTouchedByEvent = true;
+    const harness = normalizeAgentHarnessSelection(parsed.data);
+    if (sameAgentHarnessSelection(this.snapshot.config.harness, harness)) return [];
+    return [
+      {
+        op: "state.updated",
+        patch: { config: { ...this.snapshot.config, harness } },
       },
     ];
   }
