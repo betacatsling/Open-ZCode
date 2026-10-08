@@ -1,0 +1,17 @@
+ZCode-Harness
+Copyright 2026 The ZCode-Harness contributors
+
+This product is a modified version of ZCode
+(https://github.com/zai-org/ZCode), Copyright 2026 Z.AI Co., Ltd,
+licensed under the Apache License, Version 2.0 (see LICENSE).
+
+Modifications in this repository (2026) add a selectable agent harness
+(ZCode / Claude Code / Codex / pi) to the ZCode runtime, CLI and UI; see
+docs/agent-harness.md and the commits on top of upstream v3.14.3 (29628c9).
+
+ZCode's own notices, feature/risk statements and third-party license
+information are retained unchanged in NOTICE.md and THIRD-PARTY-NOTICES.md.
+
+Claude Code, Codex and pi are third-party programs that are not included
+in this repository; they are invoked as separately installed executables
+and remain subject to their own licenses and terms.
