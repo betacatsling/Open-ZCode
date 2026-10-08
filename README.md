@@ -1,4 +1,4 @@
-# ZCode-Harness
+# Open ZCode
 
 <p align="center">
   <img src="public/logo/icons/1024x1024.png" alt="ZCode" width="112" height="112" />
@@ -8,7 +8,7 @@
   简体中文 · <a href="#english">English</a>
 </p>
 
-ZCode-Harness 基于开源的 AI 编程工作台 [ZCode](https://github.com/zai-org/ZCode)（Apache-2.0）。它在 ZCode 的桌面端和 Web 界面上增加了**可选 Agent Harness**。每个会话都能在输入框里选择由谁来跑 agent loop：可以是 ZCode 自带的 agent，也可以是本机安装的 **Claude Code**、**Codex** 或 **pi** CLI。ZCode 仍然负责界面、会话、审批、diff 和撤销。
+Open ZCode 基于开源的 AI 编程工作台 [ZCode](https://github.com/zai-org/ZCode)（Apache-2.0）。它在 ZCode 的桌面端和 Web 界面上增加了**可选 Agent Harness**。每个会话都能在输入框里选择由谁来跑 agent loop：可以是 ZCode 自带的 agent，也可以是本机安装的 **Claude Code**、**Codex** 或 **pi** CLI。ZCode 仍然负责界面、会话、审批、diff 和撤销。
 
 > 本项目是社区分支，与 Z.AI、Anthropic、OpenAI 或 pi 的作者均无隶属或背书关系。
 
@@ -16,7 +16,7 @@ ZCode-Harness 基于开源的 AI 编程工作台 [ZCode](https://github.com/zai-
 
 ![演示动图：会话中途从 Claude Code 切换到 Codex](docs/media/zcode-selectable-harness-demo.gif)
 
-▶ 完整演示视频（2 分 33 秒，中文界面与字幕）：[docs/media/zcode-selectable-harness-demo.mp4](docs/media/zcode-selectable-harness-demo.mp4)，也可在 [v0.1.0 Release](https://github.com/betacatsling/ZCode-Harness/releases/tag/v0.1.0) 下载。
+▶ 完整演示视频（2 分 33 秒，中文界面与字幕）：[docs/media/zcode-selectable-harness-demo.mp4](docs/media/zcode-selectable-harness-demo.mp4)，也可在 [v0.1.0 Release](https://github.com/betacatsling/Open-ZCode/releases/tag/v0.1.0) 下载。
 
 > 演示里的 claude / codex / pi 都是真实安装的 CLI，但它们的模型请求指向本机的 mock 模型服务，没有调用真实模型 API，也没有使用真实密钥。
 
@@ -50,8 +50,8 @@ ZCode-Harness 基于开源的 AI 编程工作台 [ZCode](https://github.com/zai-
 需要 Git、Node.js **24.14.0** 和 pnpm **10.33.2**（版本以 [mise.toml](mise.toml) 为准）。
 
 ```bash
-git clone https://github.com/betacatsling/ZCode-Harness.git
-cd ZCode-Harness
+git clone https://github.com/betacatsling/Open-ZCode.git
+cd Open-ZCode
 pnpm bootstrap                      # 安装依赖并构建基础包
 
 # 构建 Agent CLI（harness 适配器和运行时都在这里）
@@ -108,11 +108,11 @@ export ZCODE_AGENT_SERVER_ARGS_JSON='["<仓库路径>/apps/zcode-cli/packages/cl
 
 ## English
 
-**ZCode-Harness** is a community fork of [ZCode](https://github.com/zai-org/ZCode) (Apache-2.0), an AI coding workbench. In ZCode's desktop and web UI, you can choose **per session** which agent harness runs the agent loop: ZCode's built-in agent, or a locally installed **Claude Code**, **Codex**, or **pi** CLI. ZCode still owns the UI, sessions, approvals, diffs, and undo.
+**Open ZCode** is a community fork of [ZCode](https://github.com/zai-org/ZCode) (Apache-2.0), an AI coding workbench. In ZCode's desktop and web UI, you can choose **per session** which agent harness runs the agent loop: ZCode's built-in agent, or a locally installed **Claude Code**, **Codex**, or **pi** CLI. ZCode still owns the UI, sessions, approvals, diffs, and undo.
 
 > Not affiliated with or endorsed by Z.AI, Anthropic, OpenAI, or the pi authors.
 
-**Demo:** see the GIF above, the full video at [docs/media/zcode-selectable-harness-demo.mp4](docs/media/zcode-selectable-harness-demo.mp4) (2:33, Chinese UI and captions), or the [v0.1.0 release](https://github.com/betacatsling/ZCode-Harness/releases/tag/v0.1.0). The CLIs in the demo are real, but they talk to a local mock model server. No real model APIs or keys are used.
+**Demo:** see the GIF above, the full video at [docs/media/zcode-selectable-harness-demo.mp4](docs/media/zcode-selectable-harness-demo.mp4) (2:33, Chinese UI and captions), or the [v0.1.0 release](https://github.com/betacatsling/Open-ZCode/releases/tag/v0.1.0). The CLIs in the demo are real, but they talk to a local mock model server. No real model APIs or keys are used.
 
 **Features**
 
@@ -130,7 +130,7 @@ export ZCODE_AGENT_SERVER_ARGS_JSON='["<仓库路径>/apps/zcode-cli/packages/cl
 **Install & run**
 
 ```bash
-git clone https://github.com/betacatsling/ZCode-Harness.git && cd ZCode-Harness
+git clone https://github.com/betacatsling/Open-ZCode.git && cd Open-ZCode
 pnpm bootstrap && pnpm --filter @zcode/cli... build
 ZCODE_SERVER_WORKSPACE=/path/to/project pnpm dev:web   # http://localhost:5173
 ```
