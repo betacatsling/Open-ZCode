@@ -128,6 +128,23 @@ The root [.env.example](.env.example) provides sample service URLs and build con
 
 Runtime variables can be set explicitly in the environment of the startup command. See [config/README.md](config/README.md) for the default configuration shipped with the client.
 
+## Selectable Agent Harness (Claude Code / Codex / pi)
+
+Each session can choose who runs the agent loop from the **Harness** menu at the left of the composer: ZCode's built-in agent (default), or a locally installed Claude Code, Codex, or pi. With an external harness selected, the model and reasoning-effort menus switch to that harness's options; tool calls, diffs, and reasoning render as native ZCode cards, and write / command approvals use ZCode's approval card.
+
+| Harness     | Install                                          | Sign in             | Protocol                                       |
+| ----------- | ------------------------------------------------ | ------------------- | ---------------------------------------------- |
+| Claude Code | `npm install -g @anthropic-ai/claude-code`       | `claude`            | stream-json + `--permission-prompt-tool stdio` |
+| Codex       | `npm install -g @openai/codex`                   | `codex login`       | `codex app-server` (JSON-RPC)                  |
+| pi          | `npm install -g @earendil-works/pi-coding-agent` | `pi`, then `/login` | `pi --mode rpc` + a ZCode approval extension   |
+
+- Credentials and model configuration stay with each harness: ZCode does not inject its own provider credentials; the harness process only inherits the agent process environment.
+- Later turns on the same harness resume its native session; switching harness mid-chat starts a new native session and hands the earlier conversation over as text.
+- Executables are looked up on the login shell's `PATH` and common install directories; override with `ZCODE_CLAUDE_CODE_PATH`, `ZCODE_CODEX_PATH`, `ZCODE_PI_PATH`.
+- CLI: `zcode -p "…" --harness claude-code|codex|pi [--harness-model <model>] [--harness-thought <level>]`.
+
+See [docs/agent-harness.md](docs/agent-harness.md) (Chinese) for the design, permission-mode mapping, and known limitations.
+
 ## Packaging
 
 See [third-party/README.md](third-party/README.md) for notice generation, distribution checks, and where the notices are included in each distribution.

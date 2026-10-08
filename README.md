@@ -134,6 +134,23 @@ node apps/zcode-cli/packages/cli/dist/zcode.cjs --help
 
 运行时变量可在启动命令的环境中显式设置。随客户端发布的默认配置见 [config/README.md](config/README.md)。
 
+## 可选 Agent Harness（Claude Code / Codex / pi）
+
+每个会话都可以在输入框左侧的 **Harness** 菜单中选择由谁运行 agent loop：ZCode 自带的 agent（默认），或本机安装的 Claude Code、Codex、pi。选择外部 harness 后，模型与思考深度菜单切换为该 harness 的选项；工具调用、diff、思考内容以 ZCode 原生卡片展示，写入 / 命令审批进入 ZCode 的审批卡片。
+
+| Harness     | 安装                                             | 登录                | 协议                                           |
+| ----------- | ------------------------------------------------ | ------------------- | ---------------------------------------------- |
+| Claude Code | `npm install -g @anthropic-ai/claude-code`       | `claude`            | stream-json + `--permission-prompt-tool stdio` |
+| Codex       | `npm install -g @openai/codex`                   | `codex login`       | `codex app-server`（JSON-RPC）                 |
+| pi          | `npm install -g @earendil-works/pi-coding-agent` | `pi`，然后 `/login` | `pi --mode rpc` + ZCode 审批扩展               |
+
+- 凭据与模型配置由各 harness 自己管理：ZCode 不注入自己的 Provider 凭据，harness 进程只继承 agent 进程的环境变量；
+- 同一 harness 的后续轮次续接其原生会话；中途切换 harness 会新建会话，并把之前的对话以文本形式交接；
+- 可执行文件从登录 shell 的 `PATH` 及常见安装目录查找，可用 `ZCODE_CLAUDE_CODE_PATH`、`ZCODE_CODEX_PATH`、`ZCODE_PI_PATH` 指定；
+- 命令行：`zcode -p "…" --harness claude-code|codex|pi [--harness-model <模型>] [--harness-thought <档位>]`。
+
+设计、权限模式映射与已知限制见 [docs/agent-harness.md](docs/agent-harness.md)。
+
 ## 打包
 
 第三方声明生成、发行校验流程及声明在发行物中的位置见 [third-party/README.md](third-party/README.md)。
