@@ -4827,6 +4827,23 @@ const enUS: Record<string, string> = {
     "This conversation has used more context than the target model's available context after reserving maximum output. The conversation must be compressed before switching models, but the current task is still running and context compression cannot run now. Wait for the task to finish, then switch models again.",
   "chat.modelSwitch.contextWindowGuard.stillTooLarge":
     "After compression, the context used by this conversation is still larger than the target model's available context after reserving maximum output. Model switching was canceled.",
+  // agent harness 选择器
+  "chat.toolbar.harness.label": "Agent harness",
+  "chat.toolbar.harness.tooltip": "Choose which agent loop runs this conversation",
+  "chat.toolbar.harness.zcode.description": "ZCode's built-in agent with ZCode model services",
+  "chat.toolbar.harness.external.description":
+    "Runs the locally installed {name} CLI; it owns tools, context and model choice",
+  "chat.toolbar.harness.status.available": "Installed {version}",
+  "chat.toolbar.harness.status.missing": "Not installed — {install}",
+  "chat.toolbar.harness.status.unknown": "Availability not checked yet",
+  "chat.toolbar.harness.loginHint": "Sign in with: {hint}",
+  "chat.toolbar.harness.switchNotice":
+    "Switching harness starts a new {name} session; ZCode hands over this conversation's transcript.",
+  "chat.toolbar.harness.model.label": "{name} model",
+  "chat.toolbar.harness.model.default": "Default model",
+  "chat.toolbar.harness.thought.label": "Reasoning effort",
+  "chat.toolbar.harness.thought.default": "Default effort",
+  "chat.toolbar.harness.notInstalled": "{name} is not installed on this machine",
   "chat.toolbar.mode.label": "Switch mode",
   // CUA composer entry button
   "chat.toolbar.computerUse.label": "Computer Use",
@@ -5815,7 +5832,7 @@ const enUS: Record<string, string> = {
   "chat.permission.workflow.refine.placeholder": "Describe how the workflow should change…",
   "chat.permission.workflow.allowForSession": "Always allow in this session",
   "chat.permission.workflow.allowForSession.description":
-    "Do not ask again for workflows in this session",
+    "Do not ask again for this tool in this session",
   "chat.permission.workflow.amend.title": "Amend this workflow?",
   "chat.permission.workflow.amends": "Amends run",
   "chat.permission.workflow.amends.running": "still running, will be stopped",

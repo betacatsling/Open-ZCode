@@ -1,6 +1,6 @@
 import { resolveSelectionSideInheritedModel } from "@/lib/selectionSideInheritedModel.js";
 import { useStartPlanRecommendation } from "@/hooks/useStartPlanRecommendation.js";
-import type { SessionCreateSource } from "@zcode/shared";
+import type { ModelSelection, SessionCreateSource } from "@zcode/shared";
 import { reportSessionCreate } from "@/lib/sessionCreateTelemetry.js";
 import { getLocalTtftObserver } from "@/v4/telemetry/localTtftObserver.js";
 /* oxlint-disable eslint(max-lines) -- SessionPane 是单 pane 竖切的命令编排收口（订阅/发送/停止/fork/edit/retry/queue/slash 全集），与旧 ChatView 同粒度；HEAD 已超限（693 行计数），拆散命令组会打散 dispatchCommand/snapshotRef 的闭包纪律。 */
@@ -92,6 +92,8 @@ import {
 import type { ModelSelectionSource } from "@/v4/composer/V4ComposerToolbar.js";
 import { formatModelChangeLabel } from "@/v4/composer/modelTriggerDisplay.js";
 import { resolveAppFollowupMode } from "@/v4/composer/followupModeSettings.js";
+import { useAgentHarnessAvailability } from "@/v4/composer/agentHarnessAvailabilityStore.js";
+import { isComposerHarnessSubmittable } from "@/v4/composer/composerHarnessState.js";
 import {
   createComposerSubmissionConfig,
   type ComposerSubmissionConfig,
@@ -420,9 +422,14 @@ function submissionConfigFromCommand(
       : type === "sendText" || type === "sendGoalCommand"
         ? payload
         : undefined;
-  if (!candidate?.modelSelection || !candidate.mode) return null;
+  if (!candidate?.mode || (!candidate.modelSelection && !candidate.harness)) return null;
   return {
-    modelSelection: candidate.modelSelection as ComposerSubmissionConfig["modelSelection"],
+    ...(candidate.modelSelection
+      ? { modelSelection: candidate.modelSelection as ModelSelection }
+      : {}),
+    ...(candidate.harness
+      ? { harness: candidate.harness as NonNullable<ComposerSubmissionConfig["harness"]> }
+      : {}),
     mode: candidate.mode as ComposerSubmissionConfig["mode"],
     planEnabled:
       typeof candidate.planEnabled === "boolean"
@@ -1245,6 +1252,9 @@ export function SessionPane({
     handleDraftSelectModel,
     handleDraftSelectThought,
     handleDraftSwitchMode,
+    handleDraftSelectHarness,
+    handleDraftSelectHarnessModel,
+    handleDraftSelectHarnessThought,
     promoteComposerDraft,
     captureAcceptedModelSelection,
     replaceComposerDraft,
@@ -1288,9 +1298,13 @@ export function SessionPane({
     () => createComposerSubmissionConfig(draftConfigRef.current, modelSelectionView),
     [draftConfigRef, modelSelectionView],
   );
+  const harnessAvailability = useAgentHarnessAvailability(workspacePath, workspaceIdentity);
   const composerSubmissionReady = useMemo(
-    () => createComposerSubmissionConfig(draftConfig, modelSelectionView) !== null,
-    [draftConfig, modelSelectionView],
+    () =>
+      createComposerSubmissionConfig(draftConfig, modelSelectionView) !== null &&
+      // 已知未安装的外部 harness 不允许提交（选择器里给出安装命令）。
+      isComposerHarnessSubmittable(draftConfig.harness, harnessAvailability),
+    [draftConfig, modelSelectionView, harnessAvailability],
   );
   const codingPlanUpgradeDialog = useOptionalCodingPlanUpgradeDialog();
   const openSettingsTab = useOptionalTabStore((state) => state.openSettingsTab);
@@ -1404,12 +1418,18 @@ export function SessionPane({
       sessionCreateSource?: SessionCreateSource,
     ): Promise<CommandAck> => {
       const submission = submissionConfigFromCommand(type, payload);
-      const acceptRecent = submission
-        ? captureComposerRecentSubmission(workspacePath, submission, workspaceIdentity)
-        : undefined;
+      const submittedModelSelection = submission?.modelSelection;
+      const acceptRecent =
+        submission && submittedModelSelection
+          ? captureComposerRecentSubmission(
+              workspacePath,
+              { mode: submission.mode, modelSelection: submittedModelSelection },
+              workspaceIdentity,
+            )
+          : undefined;
       const acceptSelection =
-        submission && (sessionId === null || targetSessionId === sessionId)
-          ? captureAcceptedModelSelection(submission.modelSelection)
+        submittedModelSelection && (sessionId === null || targetSessionId === sessionId)
+          ? captureAcceptedModelSelection(submittedModelSelection)
           : undefined;
       const envelope = createCommandEnvelope({
         type,
@@ -2615,8 +2635,12 @@ export function SessionPane({
         // resumeGoal 等控制命令也不应被发送消息确认框截获。
         return "confirmationRequired" as const;
       }
-      if (slashCommand === null || slashCommand.kind === "sendGoalCommand") {
-        const original = submission.modelSelection;
+      // 外部 harness 不使用 ZCode 模型：跳过 ZCode 套餐推荐。
+      const original =
+        submission.harness && submission.harness.harness !== "zcode"
+          ? undefined
+          : submission.modelSelection;
+      if (original && (slashCommand === null || slashCommand.kind === "sendGoalCommand")) {
         const chosen = await recommendStartPlan(original);
         if (!chosen) return "blocked" as const;
         if (chosen !== original) {
@@ -4414,6 +4438,11 @@ export function SessionPane({
       onSelectModel={handleSelectModel}
       onSelectThought={handleSelectThought}
       onSwitchMode={handleSwitchMode}
+      onSelectHarness={handleDraftSelectHarness}
+      onSelectHarnessModel={handleDraftSelectHarnessModel}
+      onSelectHarnessThought={handleDraftSelectHarnessThought}
+      harnessAvailability={harnessAvailability}
+      sessionHarness={snapshot?.sessionId === sessionId ? snapshot?.config.harness : undefined}
       onOpenRunningBackgroundWorks={
         sessionId && runningBackgroundWorkCount > 0 ? handleOpenRunningBackgroundWorks : undefined
       }

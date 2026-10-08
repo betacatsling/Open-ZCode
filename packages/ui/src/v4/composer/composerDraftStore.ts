@@ -12,6 +12,8 @@ import { logger } from "@/logger.js";
 import { modelSelectionSchema, type ModelSelection } from "@zcode/shared";
 import { submissionModeSchema, type SubmissionMode } from "@zcode/shared/zcode-protocol-v4";
 import type { ComposerMentionPrefill } from "@/store/zcodeSessionStoreTypes.js";
+import type { AgentHarnessSelection } from "@zcode/shared/agent-harness";
+import { readComposerHarness } from "@/v4/composer/composerHarnessState.js";
 
 export interface V4ComposerDraft {
   text: string;
@@ -24,6 +26,8 @@ export interface V4ComposerDraft {
   lastPlanTransitionId?: string;
   lastPermissionGrantId?: string;
   modelSelection?: ModelSelection;
+  /** 本会话的 agent harness（缺省 = ZCode）；与 mode/modelSelection 一样随 Submission 发送。 */
+  harness?: AgentHarnessSelection;
   /** 首次分享导入等待公共新任务初始化；不能由空 Session snapshot 抢先填充。 */
   initializeFromNewTask?: true;
   updatedAt: number;
@@ -105,6 +109,7 @@ function readDraft(value: unknown): V4ComposerDraft | null {
     : identity?.success
       ? identity.data
       : undefined;
+  const harness = readComposerHarness(value.harness);
   const mention = value.mention;
   const hasMention =
     isRecord(mention) &&
@@ -133,6 +138,7 @@ function readDraft(value: unknown): V4ComposerDraft | null {
       ? { lastPlanTransitionId: value.lastPlanTransitionId }
       : {}),
     ...(modelSelection ? { modelSelection } : {}),
+    ...(harness ? { harness } : {}),
     ...(value.initializeFromNewTask === true && !mode.success
       ? { initializeFromNewTask: true as const }
       : {}),
@@ -188,6 +194,7 @@ export function persistV4ComposerDraft(
     !draft.mention &&
     !draft.mode &&
     !draft.modelSelection &&
+    !draft.harness &&
     !draft.initializeFromNewTask
   ) {
     delete file.scopes[scopeId];

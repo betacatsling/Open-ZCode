@@ -37,6 +37,12 @@ import {
 import { resolveAppFollowupMode } from "@/v4/composer/followupModeSettings.js";
 import { logger } from "@/logger.js";
 import { useZCodeSessionStore } from "@/store/zcodeSessionStore.js";
+import {
+  readComposerHarness,
+  selectComposerHarness,
+  selectComposerHarnessModel,
+  selectComposerHarnessThought,
+} from "@/v4/composer/composerHarnessState.js";
 
 /** 目录水合单飞（per workspaceKey）：draft、已有 session 和严格模式双挂载共享一次 RPC。 */
 const workspaceCatalogHydrationFlights = new Map<string, Promise<void>>();
@@ -97,6 +103,10 @@ interface DraftConfigControl {
   handleDraftSelectModel: (modelProvider: string, model: string) => void;
   handleDraftSelectThought: (thought: string) => void;
   handleDraftSwitchMode: (mode: string) => void;
+  /** harness 选择（zcode / claude-code / codex / pi）及外部 harness 的模型、思考深度。 */
+  handleDraftSelectHarness: (harness: string) => void;
+  handleDraftSelectHarnessModel: (model: string) => void;
+  handleDraftSelectHarnessThought: (thought: string) => void;
 }
 
 export function useDraftConfigControl(params: {
@@ -166,6 +176,11 @@ export function useDraftConfigControl(params: {
             modelSelection: sessionConfig?.modelSelection,
           };
   }
+  // harness 是会话事实：草稿未显式选择时跟随快照（含旧草稿与 CLI 侧 --harness 设置）。
+  const sessionHarness = readComposerHarness(sessionConfig?.harness);
+  if (!draft.harness && sessionHarness && sessionHarness.harness !== "zcode") {
+    draft = { ...draft, harness: sessionHarness };
+  }
   if (sessionConfig) {
     draft = applyComposerPlanTransition(draft, sessionConfig.planTransition);
     draft = applyComposerPermissionGrant(draft, sessionConfig.permissionGrant);
@@ -187,8 +202,9 @@ export function useDraftConfigControl(params: {
       provider: effectiveSelection?.providerId ?? "",
       model: effectiveSelection?.modelId ?? "",
       thought: effectiveSelection?.options?.reasoningLevel ?? "",
+      ...(draft.harness ? { harness: draft.harness } : {}),
     }),
-    [draft.mode, draft.planEnabled, effectiveSelection],
+    [draft.mode, draft.planEnabled, draft.harness, effectiveSelection],
   );
   const draftConfigRef = useRef(draftConfig);
   draftConfigRef.current = draftConfig;
@@ -223,6 +239,7 @@ export function useDraftConfigControl(params: {
         provider: selection?.providerId ?? "",
         model: selection?.modelId ?? "",
         thought: selection?.options?.reasoningLevel ?? "",
+        ...(next.harness ? { harness: next.harness } : {}),
       };
       setStoredState(nextState);
       persistV4ComposerDraft(workspacePath, workspaceIdentity, scopeId, next);
@@ -480,7 +497,40 @@ export function useDraftConfigControl(params: {
     [updateComposerDraft],
   );
 
+  const handleDraftSelectHarness = useCallback(
+    (harness: string) => {
+      updateComposerDraft((current) => ({
+        ...current,
+        harness: selectComposerHarness(current.harness, harness),
+        mode: current.mode ?? "build",
+        initializeFromNewTask: undefined,
+      }));
+    },
+    [updateComposerDraft],
+  );
+  const handleDraftSelectHarnessModel = useCallback(
+    (model: string) => {
+      updateComposerDraft((current) => ({
+        ...current,
+        harness: selectComposerHarnessModel(current.harness, model),
+      }));
+    },
+    [updateComposerDraft],
+  );
+  const handleDraftSelectHarnessThought = useCallback(
+    (thought: string) => {
+      updateComposerDraft((current) => ({
+        ...current,
+        harness: selectComposerHarnessThought(current.harness, thought),
+      }));
+    },
+    [updateComposerDraft],
+  );
+
   return {
+    handleDraftSelectHarness,
+    handleDraftSelectHarnessModel,
+    handleDraftSelectHarnessThought,
     modelSelectionRead,
     draftConfig,
     draftConfigRef,

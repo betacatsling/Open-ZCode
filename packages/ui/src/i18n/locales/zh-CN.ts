@@ -4528,6 +4528,23 @@ const zhCN: Record<string, string> = {
     "当前会话已使用的上下文超过目标模型预留最大输出后的可用上下文，需要先压缩当前会话后才能切换。但当前任务正在运行，无法执行上下文压缩。请等待任务结束后再切换模型。",
   "chat.modelSwitch.contextWindowGuard.stillTooLarge":
     "压缩完成后，当前会话已使用的上下文仍大于目标模型预留最大输出后的可用上下文，模型切换已取消。",
+  // agent harness 选择器
+  "chat.toolbar.harness.label": "Agent Harness",
+  "chat.toolbar.harness.tooltip": "选择由哪个 agent loop 执行本会话",
+  "chat.toolbar.harness.zcode.description": "ZCode 自带 agent，使用 ZCode 模型服务",
+  "chat.toolbar.harness.external.description":
+    "运行本机安装的 {name} CLI，由它负责工具、上下文与模型选择",
+  "chat.toolbar.harness.status.available": "已安装 {version}",
+  "chat.toolbar.harness.status.missing": "未安装 — {install}",
+  "chat.toolbar.harness.status.unknown": "尚未检测可用性",
+  "chat.toolbar.harness.loginHint": "登录方式：{hint}",
+  "chat.toolbar.harness.switchNotice":
+    "切换 harness 会新建 {name} 会话，ZCode 会把本会话的对话记录交接给它。",
+  "chat.toolbar.harness.model.label": "{name} 模型",
+  "chat.toolbar.harness.model.default": "默认模型",
+  "chat.toolbar.harness.thought.label": "思考深度",
+  "chat.toolbar.harness.thought.default": "默认深度",
+  "chat.toolbar.harness.notInstalled": "本机未安装 {name}",
   "chat.toolbar.mode.label": "切换模式",
   // CUA 输入框常驻入口按钮
   "chat.toolbar.computerUse.label": "电脑操作",
@@ -5555,7 +5572,7 @@ const zhCN: Record<string, string> = {
   "chat.permission.workflow.refine.placeholder": "描述这个工作流应该怎么改…",
   // 会话免确认：只活在本次会话，重启后再问。
   "chat.permission.workflow.allowForSession": "本会话内始终允许",
-  "chat.permission.workflow.allowForSession.description": "本会话内运行工作流不再询问",
+  "chat.permission.workflow.allowForSession.description": "本会话内该工具不再询问",
   // ── 修订──
   // 修订的确认窗只对别的会话的 run 出现：问句换词，多一行 lineage（前驱还在跑时再多一句）。
   // 不导入预览、不放脚本 diff。

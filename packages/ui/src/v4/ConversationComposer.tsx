@@ -158,6 +158,15 @@ import {
   type ModelSelectionSource,
 } from "@/v4/composer/V4ComposerToolbar.js";
 import {
+  V4ComposerHarnessModelControls,
+  V4ComposerHarnessSwitch,
+} from "@/v4/composer/V4ComposerHarnessControls.js";
+import { isComposerExternalHarness } from "@/v4/composer/composerHarnessState.js";
+import type {
+  AgentHarnessAvailabilityInfo,
+  AgentHarnessSelection,
+} from "@zcode/shared/agent-harness";
+import {
   resolveV4ComposerConfigPickerState,
   type V4ComposerConfigPicker,
 } from "@/v4/composer/configPickerState.js";
@@ -429,6 +438,14 @@ interface ConversationComposerProps {
   /** 选中思考深度；同时带上用户操作时看到的模型，避免异步回流后把 thought 归到另一模型。 */
   onSelectThought: (thought: string, modelContext: { provider: string; model: string }) => void;
   onSwitchMode: (mode: string) => void;
+  /** agent harness 选择（缺省不渲染选择器，例如只读子会话）。 */
+  onSelectHarness?: (harness: string) => void;
+  onSelectHarnessModel?: (model: string) => void;
+  onSelectHarnessThought?: (thought: string) => void;
+  /** 宿主报告的外部 harness 可用性。 */
+  harnessAvailability?: readonly AgentHarnessAvailabilityInfo[];
+  /** 会话当前运行的 harness（快照 config.harness）。 */
+  sessionHarness?: AgentHarnessSelection;
   /** 打开当前 session 的 Status panel，并直达 Running 明细。 */
   onOpenRunningBackgroundWorks?: () => void;
   /**
@@ -518,6 +535,11 @@ function ConversationComposerImpl({
   onSelectModel,
   onSelectThought,
   onSwitchMode,
+  onSelectHarness,
+  onSelectHarnessModel,
+  onSelectHarnessThought,
+  harnessAvailability,
+  sessionHarness,
   onOpenRunningBackgroundWorks,
   backgroundWorkOpenTarget = "panel",
   runningSubagentCount = 0,
@@ -2035,31 +2057,43 @@ function ConversationComposerImpl({
       }),
     [onSelectModel],
   );
+  const externalHarnessSelected = isComposerExternalHarness(draftConfig?.harness);
   const submitControlNode = useMemo(
     () => (
       <div className="flex min-w-0 items-center gap-1">
         <span className="flex min-w-0 shrink items-center gap-1 overflow-hidden empty:hidden">
-          <V4ComposerModelControls
-            workspacePath={workspacePath}
-            workspaceIdentity={workspaceIdentity}
-            modelSelectionView={modelSelectionView}
-            modelSelectionState={modelSelectionState}
-            modelSelectionReload={modelSelectionReload}
-            sessionId={sessionId ?? null}
-            phase={composerPhase}
-            provider={provider}
-            draftMode={draftMode}
-            draftConfig={draftConfig}
-            usage={composerUsage}
-            disabled={disabled}
-            activeConfigPicker={activeConfigPicker}
-            onConfigPickerOpenChange={handleConfigPickerOpenChange}
-            onSelectModel={handleSelectModelTrace}
-            onSelectThought={onSelectThought}
-            onSwitchMode={onSwitchMode}
-            onRecoverCustomModelSelection={onRecoverCustomModelSelection}
-            onSendCompressionCommand={onSendCompressionCommand}
-          />
+          {externalHarnessSelected && onSelectHarnessModel && onSelectHarnessThought ? (
+            <V4ComposerHarnessModelControls
+              harness={draftConfig?.harness}
+              disabled={disabled}
+              activeConfigPicker={activeConfigPicker}
+              onConfigPickerOpenChange={handleConfigPickerOpenChange}
+              onSelectHarnessModel={onSelectHarnessModel}
+              onSelectHarnessThought={onSelectHarnessThought}
+            />
+          ) : (
+            <V4ComposerModelControls
+              workspacePath={workspacePath}
+              workspaceIdentity={workspaceIdentity}
+              modelSelectionView={modelSelectionView}
+              modelSelectionState={modelSelectionState}
+              modelSelectionReload={modelSelectionReload}
+              sessionId={sessionId ?? null}
+              phase={composerPhase}
+              provider={provider}
+              draftMode={draftMode}
+              draftConfig={draftConfig}
+              usage={composerUsage}
+              disabled={disabled}
+              activeConfigPicker={activeConfigPicker}
+              onConfigPickerOpenChange={handleConfigPickerOpenChange}
+              onSelectModel={handleSelectModelTrace}
+              onSelectThought={onSelectThought}
+              onSwitchMode={onSwitchMode}
+              onRecoverCustomModelSelection={onRecoverCustomModelSelection}
+              onSendCompressionCommand={onSendCompressionCommand}
+            />
+          )}
         </span>
         {showStopControl ? (
           <ControlHintTooltip title={stopTooltipTitle} shortcut="Esc">
@@ -2118,6 +2152,9 @@ function ConversationComposerImpl({
       onRecoverCustomModelSelection,
       onSendCompressionCommand,
       onSwitchMode,
+      externalHarnessSelected,
+      onSelectHarnessModel,
+      onSelectHarnessThought,
       pending,
       provider,
       modifierTooltip,
@@ -2139,6 +2176,17 @@ function ConversationComposerImpl({
   const leadingActionsNode = useMemo(
     () => (
       <>
+        {onSelectHarness && (
+          <V4ComposerHarnessSwitch
+            harness={draftConfig?.harness}
+            sessionHarness={sessionHarness}
+            availability={harnessAvailability}
+            disabled={disabled}
+            activeConfigPicker={activeConfigPicker}
+            onConfigPickerOpenChange={handleConfigPickerOpenChange}
+            onSelectHarness={onSelectHarness}
+          />
+        )}
         <V4ComposerModeSwitch
           workspacePath={workspacePath}
           workspaceIdentity={workspaceIdentity}
@@ -2174,6 +2222,9 @@ function ConversationComposerImpl({
       backgroundWorkOpenTarget,
       onOpenRunningBackgroundWorks,
       onSwitchMode,
+      onSelectHarness,
+      sessionHarness,
+      harnessAvailability,
       provider,
       remoteSessionId,
       runningSubagentCount,

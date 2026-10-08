@@ -9,6 +9,7 @@ import { type ZCodeProvider, type ZCodeWorkspacePrepareResult } from "@zcode/sha
 import { getChatErrorMessage } from "@/lib/chatPrepareError.js";
 import { logger } from "@/logger.js";
 import { zcodeWorkspacePresentationToConfigOptions } from "@/lib/zcodeSessionProjection.js";
+import { setAgentHarnessAvailability } from "@/v4/composer/agentHarnessAvailabilityStore.js";
 
 export async function prepareWorkspaceWithZCodeSessionService(params: {
   workspacePath: string;
@@ -41,6 +42,13 @@ export async function prepareWorkspaceWithZCodeSessionService(params: {
   }
 
   const readPresentationDurationMs = Date.now() - startedAt;
+  if (presentation.harnesses) {
+    setAgentHarnessAvailability(
+      params.workspacePath,
+      params.workspaceIdentity,
+      presentation.harnesses,
+    );
+  }
   const configOptions = zcodeWorkspacePresentationToConfigOptions(presentation.mode);
   const totalDurationMs = Date.now() - startedAt;
   logger.info("[zcode-workspace-presentation] readWorkspacePresentation done", {
